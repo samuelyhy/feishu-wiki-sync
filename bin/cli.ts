@@ -1,5 +1,8 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import { runDoctor } from '../src/commands/doctor.js';
@@ -12,7 +15,23 @@ import { createContext } from '../src/context.js';
 import { ConfigError, ExitCode, exitCodeOf, friendlyMessage } from '../src/errors.js';
 import { color, createLogger } from '../src/logger.js';
 
-const VERSION = '0.1.0';
+/** 与 package.json 同步；发版改 version 后不必再改这里。 */
+function readPackageVersion(): string {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  // 源码：bin/ → 仓库根；构建后：dist/bin/ → 仓库根（也是 npm 包根）
+  const candidates = [path.resolve(here, '..', 'package.json'), path.resolve(here, '..', '..', 'package.json')];
+  for (const file of candidates) {
+    try {
+      const version = JSON.parse(fs.readFileSync(file, 'utf8')).version;
+      if (typeof version === 'string' && version) return version;
+    } catch {
+      // 试下一个
+    }
+  }
+  return '0.0.0';
+}
+
+const VERSION = readPackageVersion();
 
 /**
  * `--help` 文本完全由 `src/cli-spec.ts` 生成。
