@@ -98,10 +98,12 @@ async function main() {
   if (process.env.FWS_RELEASE_OFFLINE === '1') {
     confirmed = true;
   } else {
-    // 读接口偶尔比写接口慢一拍，多给几次机会再说「查不到」
-    for (const wait of [0, 2000, 5000, 10000, 15000]) {
+    // 读接口偶尔比写接口慢一拍。
+    // 必须查包名本身的 versions 列表，不要查 `name@version`：
+    // 新版本未同步时后者会直接 E404，被误判成「包不存在」。
+    for (const wait of [0, 3000, 8000, 15000, 25000, 40000]) {
       if (wait) await new Promise((r) => setTimeout(r, wait));
-      const probe = queryRegistry(`${name}@${version}`, { registry });
+      const probe = queryRegistry(name, { registry });
       if (probe.reachable && probe.published.includes(version)) {
         confirmed = true;
         break;
