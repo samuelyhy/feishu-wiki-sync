@@ -1,6 +1,6 @@
 {
   "name": "feishu-wiki-sync",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "本地 Markdown 按文件名同步到飞书知识库同名文档（块级增量更新，保留评论）",
   "license": "UNLICENSED",
   "type": "module",
@@ -11,6 +11,14 @@
   "engines": {
     "node": ">=18"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelyhy/feishu-wiki-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samuelyhy/feishu-wiki-sync/issues"
+  },
+  "homepage": "https://github.com/samuelyhy/feishu-wiki-sync#readme",
   "files": [
     "dist/bin",
     "dist/src",

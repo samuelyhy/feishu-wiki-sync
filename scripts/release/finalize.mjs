@@ -98,8 +98,8 @@ async function main() {
   if (process.env.FWS_RELEASE_OFFLINE === '1') {
     confirmed = true;
   } else {
-    // 读接口偶尔比写接口慢一拍，给它三次机会再说「查不到」
-    for (const wait of [0, 2000, 5000]) {
+    // 读接口偶尔比写接口慢一拍，多给几次机会再说「查不到」
+    for (const wait of [0, 2000, 5000, 10000, 15000]) {
       if (wait) await new Promise((r) => setTimeout(r, wait));
       const probe = queryRegistry(`${name}@${version}`, { registry });
       if (probe.reachable && probe.published.includes(version)) {
