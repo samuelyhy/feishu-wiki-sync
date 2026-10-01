@@ -1,0 +1,56 @@
+{
+  "name": "feishu-wiki-sync",
+  "version": "0.1.1",
+  "description": "本地 Markdown 按文件名同步到飞书知识库同名文档（块级增量更新，保留评论）",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "feishu-wiki-sync": "./dist/bin/cli.js",
+    "fws": "./dist/bin/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/bin",
+    "dist/src",
+    "README.md",
+    "CHANGELOG.md",
+    "PUBLISHING.md",
+    "feishu-wiki-sync-setup.md",
+    "feishu-wiki-sync-commands.md",
+    "feishu-wiki-sync-cli-spec.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "feishu",
+    "lark",
+    "wiki",
+    "markdown",
+    "sync",
+    "cli"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "check:ready": "node scripts/check-publish-ready.mjs",
+    "prepublishOnly": "node scripts/release/preflight.mjs",
+    "postpublish": "node scripts/release/finalize.mjs",
+    "release": "node scripts/release/cli.mjs",
+    "pretest": "npm run build",
+    "test": "node scripts/run-tests.mjs",
+    "cli": "node dist/bin/cli.js"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0"
+  }
+}

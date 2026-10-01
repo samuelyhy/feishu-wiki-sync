@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 凭证：绝不入库
+.ai-sync.env
+.ai-sync.env.*
+
+# 账本含远端 token 与内容指纹，属运行态数据
+# 注意 config.yaml 不在此列 —— 它是配置，应当入库
+.feishu-sync/ledger.json
+.feishu-sync/*.lock
+.feishu-sync/*.tmp

@@ -1,0 +1,78 @@
+name: Publish
+
+# 只在**显式触发**时跑。
+#
+# 刻意不挂在 push 上：发布不可逆（72 小时后不能撤回、包名永久占用），
+# 它必须是人的决定，不是「推了代码就顺带发出去」。
+#
+# ⚠️ CI 里**不会**递增版本号。npm 在启动那一刻就把 package.json 读进内存了，
+# `prepublishOnly` 跑得比打包晚，在那里改版本号，发出去的仍是改动前那个。
+# 所以版本号必须在本地提交好：本地 `npm run release` 会递增、写 CHANGELOG、
+# 提交、打 tag；这个工作流只负责把**已经提交的那个版本**送出去。
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 只演练不发布（默认开启，确认无误后再关掉）
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      # 发布成功后要打 tag 并推上去 —— 一个发出去却没有 tag 的版本，
+      # 日后没人答得上「npm 上那份代码到底是哪次提交」
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          # 这一行让 npm 从 NODE_AUTH_TOKEN 读凭证
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # 发布前必须跑通测试 —— 否则会把一个测试没过的版本发出去
+      - run: pnpm test
+        env:
+          NO_COLOR: '1'
+
+      # 演练：完整走一遍发布流程（含 prepublishOnly 门禁与 prepack 构建），只是不推送
+      - name: 演练发布
+        if: ${{ inputs['dry-run'] }}
+        run: npm publish --dry-run
+        env:
+          NO_COLOR: '1'
+          # 上面的 pnpm test 已经跑过测试，且跑的是同一棵树
+          FWS_RELEASE_SKIP_TESTS: '1'
+
+      - name: 正式发布
+        if: ${{ !inputs['dry-run'] }}
+        run: npm publish
+        env:
+          NO_COLOR: '1'
+          FWS_RELEASE_SKIP_TESTS: '1'
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # postpublish 的 finalize 在 CI 里只做确认、不碰 git（runner 上没有
+      # 推送身份，硬要推只会推错）。tag 由这一步补上：tag 指向的正是刚发布的
+      # 那个提交，因为 CI 发的就是仓库里已提交的版本。
+      - name: 打 tag 并推送
+        if: ${{ !inputs['dry-run'] }}
+        run: |
+          set -euo pipefail
+          TAG="v$(node -p "require('./package.json').version")"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag ${TAG} 已存在，跳过"
+            exit 0
+          fi
+          git tag -a "${TAG}" -m "${TAG}"
+          git push origin "refs/tags/${TAG}"
